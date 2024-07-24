@@ -1,0 +1,2 @@
+# BasicSpider
+Basic Spider Task.
