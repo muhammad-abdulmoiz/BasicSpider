@@ -28,7 +28,7 @@ class ProductPipeline:
         if len(item.get('color_sku', '')) >= 50:
             return False
 
-        if item.get('discount_percentage', 0) < 0:
+        if float(item.get('discount_percentage', 0)[:-1]) < 0:
             return False
 
         if not all([item.get('title'), item.get('brand_name'),
