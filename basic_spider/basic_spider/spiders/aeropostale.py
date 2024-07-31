@@ -2,145 +2,129 @@ import os
 import scrapy
 from scrapy.http import TextResponse
 import json
-import copy
 from basic_spider.items import ProductItem
 
 
-class ProductsSpider(scrapy.Spider):
+class BaseSpider(scrapy.Spider):
+    @staticmethod
+    def read_local_file(file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return file.read()
+
+    @staticmethod
+    def write_to_file(filename, data):
+        with open(filename, 'a') as file:
+            file.write(data + "\n")
+
+
+class ProductsSpider(BaseSpider):
     name = "aeropostale"
 
-    def start_requests(self):
-        file_path = ('/Users/abdul.moiz01/PycharmProjects/BasicSpider'
-                     '/basic_spider/basic_spider/Aeropostale '
-                     'Page_Source/home_page.html')
-
+    def start_requests(self, **kwargs):
+        file_path = (
+            '/Users/abdul.moiz01/PycharmProjects/BasicSpider/basic_spider/'
+            'basic_spider/Aeropostale Page_Source/home_page.html'
+        )
         url = f"file://{file_path}"
-
         yield scrapy.Request(url=url, callback=self.parse, meta={
-            'file_path': file_path, 'navigation_path': []})
+            'file_path': file_path})
 
     def parse(self, response, **kwargs):
         file_path = response.meta['file_path']
-        # navigation_path = response.meta['navigation_path']
-        with open(file_path, 'r', encoding='utf-8') as file:
-            html_content = file.read()
-
+        html_content = self.read_local_file(file_path)
         local_response = TextResponse(url=response.url, body=html_content,
                                       encoding='utf-8')
-        level_one_options = local_response.css(".menu-category .level-1 > li")
 
-        for level_one_option in level_one_options:
-            option_name = [level_one_option.css("span a::text").get().strip(
-                "\n")]
+        for level_one_option in local_response.css(
+                ".menu-category .level-1 > li"):
+            option_name = [level_one_option.css(
+                "span a::text").get().strip()]
             option_url = level_one_option.css("span a::attr(href)").get()
 
-            json_line = (json.dumps({"navigation_path": option_name,
-                                     "url": option_url}) + "\n")
-            with open('level_one.json', 'a') as level_1:
-                level_1.write(json_line)
+            self.write_to_file('level_one.json', json.dumps({
+                "navigation_path": option_name, "url": option_url
+            }))
 
-            level_two_options = level_one_option.css("div.level-2 > "
-                                                     "ul:first-of-type > li")
-
-            for level_two_option in level_two_options:
-                level_two_option_name = level_two_option.css("a::text").get()
-                level_two_option_url = level_two_option.css("a::attr("
-                                                            "href)").get()
-
-                if level_two_option_name and level_two_option_url:
-                    navigation_path = copy.deepcopy(option_name)
-                    navigation_path.append(level_two_option_name.strip(
-                        "\n").replace("\n", " "))
-
-                    json_line = (json.dumps({"navigation_path":
-                                             navigation_path, "url":
-                                             level_two_option_url}) + "\n")
-
-                    with open('level_two.json', 'a') as level_2:
-                        level_2.write(json_line)
-
-                level_three_options = level_two_option.css("ul.level-3 li")
-
-                for level_three_option in level_three_options:
-                    level_three_option_name = level_three_option.css(
-                        "a::text").get()
-                    level_three_option_url = level_three_option.css(
-                        "a::attr(href)").get()
-
-                    if level_three_option_name and level_three_option_url:
-                        navigation_path = copy.deepcopy(option_name)
-                        navigation_path.append(level_two_option_name.strip(
-                            "\n").replace("\n", " "))
-                        navigation_path.append(level_three_option_name.strip(
-                            "\n").replace("\n", " "))
-
-                        json_line = (json.dumps({"navigation_path":
-                                     navigation_path,
-                                     "url": level_three_option_url}) + "\n")
-
-                        with open('level_three.json', 'a') as level_3:
-                            level_3.write(json_line)
-
-            level_two_other_options = level_one_option.css("div.level-2 > "
-                                                           "ul.last-child li")
-
-            for level_two_option in level_two_other_options:
-                level_two_option_name = level_two_option.css("a span"
-                                                             "::text").get()
-                level_two_option_url = level_two_option.css("li a::attr("
-                                                            "href)").get()
-
-                if not level_two_option_name:
-                    level_two_option_name = level_two_option.css("li a::"
-                                                                 "text").get()
-
-                if level_two_option_name and level_two_option_url:
-                    navigation_path = copy.deepcopy(option_name)
-                    navigation_path.append(level_two_option_name.strip(
-                        "\n"))
-
-                    json_line = (json.dumps({"navigation_path":
-                                             navigation_path, "url":
-                                             level_two_option_url}) + "\n")
-
-                    with open('level_two.json', 'a') as level_2:
-                        level_2.write(json_line)
+            self.process_level_two_options(level_one_option, option_name)
+            self.process_level_two_other_options(level_one_option, option_name)
 
         yield from self.pass_call_to_listing_page()
 
+    def process_level_two_options(self, level_one_option, option_name):
+        for level_two_option in level_one_option.css(
+                "div.level-2 > ul:first-of-type > li"):
+            level_two_option_name = level_two_option.css(
+                "a::text").get()
+            level_two_option_url = level_two_option.css(
+                "a::attr(href)").get()
+
+            if level_two_option_name and level_two_option_url:
+                navigation_path = option_name + [
+                    level_two_option_name.strip().replace("\n", " ")]
+                self.write_to_file('level_two.json', json.dumps({
+                    "navigation_path": navigation_path, "url":
+                        level_two_option_url}))
+
+            self.process_level_three_options(level_two_option, option_name,
+                                             level_two_option_name)
+
+    def process_level_three_options(self, level_two_option, option_name,
+                                    level_two_option_name):
+        for level_three_option in level_two_option.css(
+                "ul.level-3 li"):
+            level_three_option_name = level_three_option.css(
+                "a::text").get()
+            level_three_option_url = level_three_option.css(
+                "a::attr(href)").get()
+
+            if level_three_option_name and level_three_option_url:
+                navigation_path = option_name + [
+                    level_two_option_name.strip(),
+                    level_three_option_name.strip().replace("\n", " ")]
+                self.write_to_file('level_three.json', json.dumps({
+                    "navigation_path": navigation_path, "url":
+                        level_three_option_url}))
+
+    def process_level_two_other_options(self, level_one_option, option_name):
+        for level_two_option in level_one_option.css(
+                "div.level-2 > ul.last-child li"):
+            level_two_option_name = level_two_option.css(
+                "a span::text").get() or level_two_option.css(
+                "li a::text").get()
+            level_two_option_url = level_two_option.css(
+                "li a::attr(href)").get()
+
+            if level_two_option_name and level_two_option_url:
+                navigation_path = option_name + [
+                    level_two_option_name.strip().replace("\n", " ")]
+                self.write_to_file('level_two.json', json.dumps({
+                    "navigation_path": navigation_path, "url":
+                        level_two_option_url}))
+
     def pass_call_to_listing_page(self):
         listing_file_path = (
-            '/Users/abdul.moiz01/PycharmProjects/BasicSpider/basic_spider'
-            '/basic_spider/Aeropostale Page_Source/listing_page.html (Men > '
-            'Accessories).html')
-
+            '/Users/abdul.moiz01/PycharmProjects/BasicSpider/basic_spider/'
+            'basic_spider/Aeropostale Page_Source/listing_page.html '
+            '(Men > Accessories).html'
+        )
         url = f"file://{listing_file_path}"
-
         yield scrapy.Request(url=url, callback=self.parse_listing_page,
                              meta={'file_path': listing_file_path})
 
-    def parse_listing_page(self, response,  **kwargs):
+    def parse_listing_page(self, response, **kwargs):
         file_path = response.meta['file_path']
-
-        with open(file_path, 'r', encoding='utf-8') as file:
-            html_content = file.read()
-
+        html_content = self.read_local_file(file_path)
         local_response = TextResponse(url=response.url, body=html_content,
                                       encoding='utf-8')
 
-        products = local_response.css("#search-result-items > div")
-
-        for product in products:
-            product_name = product.css(".product-name a::text").get().strip(
-                "\n")
+        for product in local_response.css("#search-result-items > div"):
+            product_name = product.css(".product-name a::text").get().strip()
             product_url = product.css(".product-name a::attr(href)").get()
 
             if product_name and product_url:
-                json_line = json.dumps({"product_name": product_name,
-                                        "product_url": product_url}) + "\n"
-
-                with open('listing_page_products.json', 'a') as product_file:
-                    product_file.write(json_line)
+                self.write_to_file('listing_page_products.json', json.dumps({
+                    "product_name": product_name, "product_url": product_url
+                }))
 
         yield from self.pass_call_to_details_pages()
 
@@ -170,7 +154,8 @@ class ProductsSpider(scrapy.Spider):
         item['brand_name'] = local_response.css(
             "#product-content span::text").get().strip()
         item['description'] = local_response.css(
-            ".long-description li::text").get().strip()
+            "div.product-detail + div .long-description > p + ul "
+            "li::text").getall()
         item['navigation_path'] = "dummydata"
         item['base_sku'] = local_response.css(".bfx-sku::text").get().strip()
         item['color_sku'] = local_response.css(
@@ -214,11 +199,3 @@ class ProductsSpider(scrapy.Spider):
             'size_ids': size_ids
         })
         return sizes
-
-
-
-
-
-
-
-
