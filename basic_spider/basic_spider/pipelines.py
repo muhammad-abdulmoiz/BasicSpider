@@ -8,12 +8,10 @@ class ProductPipeline:
         self.dropped_products = None
 
     def open_spider(self, spider):
-        self.products = open('products.json', 'a')
-        self.dropped_products = open('dropped_products.json', 'a')
+        self.products = open('kipling_products.json', 'a')
+        self.dropped_products = open('kipling_dropped_products.json', 'a')
 
     def process_item(self, item, spider):
-        item['description'] = ', '.join(item['description'])
-
         json_line = json.dumps(dict(item)) + "\n"
         if self.validate_item(item):
             self.products.write(json_line)
