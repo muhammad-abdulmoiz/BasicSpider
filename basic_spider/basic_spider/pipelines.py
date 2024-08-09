@@ -8,11 +8,13 @@ class ProductPipeline:
         self.dropped_products = None
 
     def open_spider(self, spider):
-        self.products = open('kipling_products.json', 'a')
-        self.dropped_products = open('kipling_dropped_products.json', 'a')
+        self.products = open('orsay_products.json', 'a', encoding='utf-8')
+        self.dropped_products = open('orsay_dropped_products.json', 'a', encoding='utf-8')
 
     def process_item(self, item, spider):
-        json_line = json.dumps(dict(item)) + "\n"
+        item['sizes'] = [size.strip() for size in item['sizes']]
+
+        json_line = json.dumps(dict(item), ensure_ascii=False) + "\n"
         if self.validate_item(item):
             self.products.write(json_line)
         else:
@@ -28,7 +30,11 @@ class ProductPipeline:
         if len(item.get('color_sku', '')) >= 50:
             return False
 
-        if float(item.get('discount_percentage', 0)[:-1]) < 0:
+        try:
+            discount_percentage = item.get('discount_percentage', '0%').strip('%')
+            if float(discount_percentage) < 0:
+                return False
+        except ValueError:
             return False
 
         if not all([item.get('title'), item.get('brand_name'),
