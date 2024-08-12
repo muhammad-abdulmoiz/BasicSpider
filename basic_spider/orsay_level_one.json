@@ -1,0 +1,72 @@
+[
+    {
+        "title": "neu",
+        "url": "https://www.orsay.de/neu",
+        "navigation_path": [
+            "neu"
+        ]
+    },
+    {
+        "title": "bekleidung",
+        "url": "https://www.orsay.de/bekleidung",
+        "navigation_path": [
+            "bekleidung"
+        ]
+    },
+    {
+        "title": "schuhe",
+        "url": "https://www.orsay.de/schuhe",
+        "navigation_path": [
+            "schuhe"
+        ]
+    },
+    {
+        "title": "accessoires",
+        "url": "https://www.orsay.de/accessoires",
+        "navigation_path": [
+            "accessoires"
+        ]
+    },
+    {
+        "title": "denim",
+        "url": "https://www.orsay.de/denim",
+        "navigation_path": [
+            "denim"
+        ]
+    },
+    {
+        "title": "business",
+        "url": "https://www.orsay.de/back-to-business",
+        "navigation_path": [
+            "business"
+        ]
+    },
+    {
+        "title": "sport",
+        "url": "https://www.orsay.de/sport-menu",
+        "navigation_path": [
+            "sport"
+        ]
+    },
+    {
+        "title": "trends",
+        "url": "https://www.orsay.de/trends",
+        "navigation_path": [
+            "trends"
+        ]
+    },
+    {
+        "title": "gutscheine",
+        "url": "https://www.orsay.de/gutscheine",
+        "navigation_path": [
+            "gutscheine"
+        ]
+    },
+    {
+        "title": "sale",
+        "url": "https://www.orsay.de/sale",
+        "navigation_path": [
+            "sale"
+        ]
+    }
+]
